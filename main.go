@@ -294,7 +294,7 @@ func getRemoteName(data string) string {
 	return strings.Replace(result, "\n", "", -1)
 }
 
-func (r *Repo)syncTags(DRY_RUN string, ANNOTATE string) {
+func (r *Repo)syncTags(DRY_RUN bool, ANNOTATE string) {
 	println("Syncing Tags ")
 
 
@@ -321,11 +321,15 @@ func (r *Repo)syncTags(DRY_RUN string, ANNOTATE string) {
 
 				cmd = fmt.Sprintf("git subtree split -q --annotate=\"" + ANNOTATE + "\" --prefix=\"" + r.SUBPATH + "\" --branch=\"" + LOCAL_TAG + "\" \"" + Tag.tag + "\"")
 
-				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				test := ""
+			if (DRY_RUN == true) {
+				test = "--dry-run"
+			}
 
-				//			cmd = fmt.Sprintf("git push -q " + DRY_RUN + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + Tag.tag)
-				//
-				//			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				cmd = fmt.Sprintf("git push -q " + test + " --force " + r.REMOTE_NAME + " " + LOCAL_TAG + ":" + Tag.tag)
+
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 			}
 			println(output)
 		}else {
@@ -363,7 +367,7 @@ func (r *Repo)syncHeads(Origin string, DRY_RUN bool) {
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()//
 			test := ""
 			if (DRY_RUN == true) {
-				test = "1"
+				test = "--dry-run"
 			}
 			cmd = fmt.Sprintf("git push -q " + test + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + head.head)
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
@@ -429,6 +433,8 @@ func checkRequirments() {
 	if ( f < "1.7.11" ) {
 		println("Git subplit needs git subtree; upgrade git to >=1.7.11")
 		os.Exit(1)
+	}else{
+		valid = true
 	}
 
 	return valid
