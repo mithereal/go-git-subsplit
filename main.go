@@ -425,7 +425,7 @@ func checkRequirments() {
 	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
 	result := strings.Split(output, " ")
-	f, _ := strconv.ParseFloat(result[2], 64)
+	f, _ := strconv.ParseFloat(result[len(result) - 1], 64)
 	if ( f < "1.7.11" ) {
 		println("Git subplit needs git subtree; upgrade git to >=1.7.11")
 		os.Exit(1)
