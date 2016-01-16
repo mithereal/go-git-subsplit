@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 	"github.com/codegangsta/cli"
-	"github.com/davecgh/go-spew/spew"
 	"path/filepath"
 )
 
@@ -100,6 +99,11 @@ func main() {
 			Value: "--annotate",
 			Usage: "annotate the repository",
 		},
+		cli.StringFlag{
+			Name: "Origin, o",
+			Value: "--Origin",
+			Usage: "Origin of the repository",
+		},
 
 		cli.StringFlag{
 			Name: "quiet, q",
@@ -118,16 +122,16 @@ func main() {
 		{
 			Name:      "init",
 			Aliases:     []string{"-i"},
-			Usage:     "Initialize a subsplit from origin",
+			Usage:     "Initialize a subsplit from Origin",
 			Action: func(c *cli.Context) {
 				fmt.Printf("Initialize Task: Starting")
 
 				cmd := fmt.Sprintf("git clone -q %s ", c.Args().First())
-				_, err := exec.Command("sh", "-c", cmd).Output()
+				_, err := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
 				abs_repo := strings.Split(c.Args().First(), "/")
 
-				dir := strings.Replace(abs_repo[len(abs_repo)-1], ".git", "", -1)
+				dir := strings.Replace(abs_repo[len(abs_repo) - 1], ".git", "", -1)
 
 				f, err := os.Create(dir + "/.subsplit")
 				f.Close()
@@ -141,7 +145,7 @@ func main() {
 					if err != nil {
 						fmt.Println(err)
 
-						f, err := os.Create(dir +"/.gitignore")
+						f, err := os.Create(dir + "/.gitignore")
 
 						if err == nil {
 
@@ -150,7 +154,7 @@ func main() {
 							if err != nil {
 								fmt.Println(n, err)
 							}
-						}else{
+						}else {
 							fmt.Println(err)
 						}
 						f.Close()
@@ -158,8 +162,8 @@ func main() {
 						n, err := io.WriteString(file, dir + "/.subsplit")
 
 						if err != nil {
-								fmt.Println(n, err)
-							}
+							fmt.Println(n, err)
+						}
 					}
 
 					fmt.Printf("Initialize Task: Successful")
@@ -197,16 +201,18 @@ func main() {
 					}
 
 					for _, r := range Repos {
-						spew.Dump(r.HEADS)
 
-						//cmd := fmt.Sprintf("git remote add r.REMOTE_NAME r.REMOTE_URL")
-						//output, _ := exec.Command("sh", "-c", cmd).Output()
+						cmd := fmt.Sprintf("git remote add r.REMOTE_NAME r.REMOTE_URL")
+						_, err := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+						if(err != nil){
+							r.sync("origin", "master","sample annotation", true);
+						}
+
+
 					}
 
-					println("Syncing Task: Started")
-					println("Syncing Task: Successful")
-
-					println("Publish task: Successful")
+					println("Publish task: Complete")
 				}else {
 					println("Error: no .subsplit found, has the repo been initalized with git-subsplit init ?")
 				}
@@ -216,7 +222,7 @@ func main() {
 			Aliases:     []string{"-u"},
 			Usage:     "Update ",
 			Action: func(c *cli.Context) {
-				println("Updating subsplit from origin ")
+				println("Updating subsplit from Origin ")
 			},
 		},
 
@@ -227,9 +233,9 @@ func main() {
 
 
 func getHeads(data string) []Head {
-	println("Querying heads from origin")
-	cmd := fmt.Sprintf("git ls-remote origin")
-	output, _ := exec.Command("sh", "-c", cmd).Output()
+	println("Querying heads from Origin")
+	cmd := fmt.Sprintf("git ls-remote Origin")
+	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 	regex := regexp.MustCompile(`refs/heads/(.*)`)
 	matches := regex.FindStringSubmatch(string(output))
 
@@ -246,9 +252,9 @@ func getHeads(data string) []Head {
 }
 
 func getTags(data string) []Tag {
-	println("Querying tags from origin")
-	cmd := fmt.Sprintf("git ls-remote origin")
-	output, _ := exec.Command("sh", "-c", cmd).Output()
+	println("Querying tags from Origin")
+	cmd := fmt.Sprintf("git ls-remote Origin")
+	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 	regex := regexp.MustCompile(`refs/tags/(.*)`)
 	matches := regex.FindStringSubmatch(string(output))
 
@@ -279,162 +285,113 @@ func getRemoteUrl(data string) string {
 func getRemoteName(data string) string {
 	println("Generating the remote name ")
 	cmd := fmt.Sprintf("echo " + data + " | git hash-object --stdin")
-	byteArray, _ := exec.Command("sh", "-c", cmd).Output()
+	byteArray, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 	result := string(byteArray[:])
 	return strings.Replace(result, "\n", "", -1)
 }
 
-func (r *Repo)syncTags(){
+func (r *Repo)syncTags(DRY_RUN string,ANNOTATE string) {
 	println("Syncing Tags ")
-	//  Todo: convert from sh to go
-//	for TAG in $TAGS
-//		do
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} git show-ref --quiet --verify -- \"refs/tags/${TAG}\""
-//			fi
-//
-//			if ! git show-ref --quiet --verify -- "refs/tags/${TAG}"
-//			then
-//				say " - skipping tag '${TAG}' (does not exist)"
-//				continue
-//			fi
-//			LOCAL_TAG="${REMOTE_NAME}-tag-${TAG}"
-//
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} LOCAL_TAG="${LOCAL_TAG}""
-//			fi
-//
-//			if git branch | grep "${LOCAL_TAG}$" >/dev/null && [ -z "$REBUILD_TAGS" ]
-//			then
-//				say " - skipping tag '${TAG}' (already synced)"
-//				continue
-//			fi
-//
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} git branch | grep \"${LOCAL_TAG}$\" >/dev/null && [ -z \"${REBUILD_TAGS}\" ]"
-//			fi
-//
-//			say " - syncing tag '${TAG}'"
-//			say " - deleting '${LOCAL_TAG}'"
-//			git branch -D "$LOCAL_TAG" >/dev/null 2>&1
-//
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} git branch -D \"${LOCAL_TAG}\" >/dev/null 2>&1"
-//			fi
-//
-//			say " - subtree split for '${TAG}'"
-//			git subtree split -q --annotate="${ANNOTATE}" --prefix="$SUBPATH" --branch="$LOCAL_TAG" "$TAG" >/dev/null
-//
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} git subtree split -q --annotate=\"${ANNOTATE}\" --prefix=\"$SUBPATH\" --branch=\"$LOCAL_TAG\" \"$TAG\" >/dev/null"
-//			fi
-//
-//			say " - subtree split for '${TAG}' [DONE]"
-//			if [ $? -eq 0 ]
-//			then
-//				PUSH_CMD="git push -q ${DRY_RUN} --force ${REMOTE_NAME} ${LOCAL_TAG}:refs/tags/${TAG}"
-//
-//				if [ -n "$VERBOSE" ];
-//				then
-//					echo "${DEBUG} PUSH_CMD=\"${PUSH_CMD}\""
-//				fi
-//
-//				if [ -n "$DRY_RUN" ]
-//				then
-//					echo \# $PUSH_CMD
-//					$PUSH_CMD
-//				else
-//					$PUSH_CMD
-//				fi
-//			fi
-//		done
+
+
+	for _, Tag := range r.TAGS {
+		cmd := fmt.Sprintf("git show-ref --quiet --verify -- \"refs/tags/" + Tag.tag + "\"")
+		output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+		fmt.Println(string(output))
+		if (output != nil) {
+			LOCAL_TAG := r.REMOTE_NAME + "-tag-" + Tag.tag
+
+			cmd = fmt.Sprintf("git branch")
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+			regex := regexp.MustCompile(LOCAL_TAG)
+			matches := regex.FindStringSubmatch(string(output))
+
+			if(matches != nil){
+				println("- skipping tag " + LOCAL_TAG + " (already synced)")
+			}else{
+				println("Syncing Tag: " + Tag.tag)
+				println("Deleting Tag: " + LOCAL_TAG)
+				cmd = fmt.Sprintf("git branch -D \"" + LOCAL_TAG +" \" ")
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				println("Syncing Tag " + Tag.tag + ": Complete ")
+
+				cmd = fmt.Sprintf("git subtree split -q --annotate=\"" + ANNOTATE + "\" --prefix=\""+ r.SUBPATH +"\" --branch=\"" + LOCAL_TAG +"\" \""+ Tag.tag +"\"")
+
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+//			cmd = fmt.Sprintf("git push -q " + DRY_RUN + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + head.head)
+
+//			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+			}
+println(output)
+		}else {
+			println(" - skipping Tag: " + Tag.tag + " (does not exist) ")
+		}
+	}
+
 }
 
-func (r *Repo)syncHeads(){
-	println("Syncing heads ")
-	//  Todo: convert from sh to go
-//	if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} git show-ref --quiet --verify -- \"refs/remotes/origin/${HEAD}\""
-//			fi
-//
-//			if ! git show-ref --quiet --verify -- "refs/remotes/origin/${HEAD}"
-//			then
-//				say " - skipping head '${HEAD}' (does not exist)"
-//				continue
-//			fi
-//			LOCAL_BRANCH="${REMOTE_NAME}-branch-${HEAD}"
-//
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} LOCAL_BRANCH=\"${LOCAL_BRANCH}\""
-//			fi
-//
-//			say " - syncing branch '${HEAD}'"
-//			git checkout master >/dev/null 2>&1
-//			git branch -D "$LOCAL_BRANCH" >/dev/null 2>&1
-//			git branch -D "${LOCAL_BRANCH}-checkout" >/dev/null 2>&1
-//			git checkout -b "${LOCAL_BRANCH}-checkout" "origin/${HEAD}" >/dev/null 2>&1
-//			git subtree split -q --prefix="$SUBPATH" --branch="$LOCAL_BRANCH" "origin/${HEAD}" >/dev/null
-//
-//			if [ -n "$VERBOSE" ];
-//			then
-//				echo "${DEBUG} git checkout master >/dev/null 2>&1"
-//				echo "${DEBUG} git branch -D \"$LOCAL_BRANCH\" >/dev/null 2>&1"
-//				echo "${DEBUG} git branch -D \"${LOCAL_BRANCH}-checkout\" >/dev/null 2>&1"
-//				echo "${DEBUG} git checkout -b \"${LOCAL_BRANCH}-checkout\" \"origin/${HEAD}\" >/dev/null 2>&1"
-//				echo "${DEBUG} git subtree split -q --prefix=\"$SUBPATH\" --branch=\"$LOCAL_BRANCH\" \"origin/${HEAD}\" >/dev/null"
-//			fi
-//
-//			if [ $? -eq 0 ]
-//			then
-//				PUSH_CMD="git push -q ${DRY_RUN} --force $REMOTE_NAME ${LOCAL_BRANCH}:${HEAD}"
-//
-//				if [ -n "$VERBOSE" ];
-//				then
-//					echo "${DEBUG} $PUSH_CMD"
-//				fi
-//
-//				if [ -n "$DRY_RUN" ]
-//				then
-//					echo \# $PUSH_CMD
-//					$PUSH_CMD
-//				else
-//					$PUSH_CMD
-//				fi
-//			fi
+
+func (r *Repo)syncHeads(Origin string, DRY_RUN bool) {
+	println("Syncing heads: Started ")
+
+	for _, head := range r.HEADS {
+		cmd := fmt.Sprintf("git show-ref --quiet --verify -- \"refs/remotes/" + Origin + "/" + head.head + "\"")
+		output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+		fmt.Println(string(output))
+		if (output != nil) {
+			println("Syncing Branch: " + head.head)
+			cmd := fmt.Sprintf("git checkout " + head.head + " >/dev/null 2>&1")
+			output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+			LOCAL_BRANCH := r.REMOTE_NAME + "-branch-" + head.head
+
+			cmd = fmt.Sprintf("git branch -D \"" + LOCAL_BRANCH + "\" >/dev/null 2>&1")
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+			cmd = fmt.Sprintf("git branch -D \"" + LOCAL_BRANCH + " - checkout \"")
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+			cmd = fmt.Sprintf("git checkout -b \"" + LOCAL_BRANCH + "-checkout\" \"" + Origin + "/" + head.head +"\" ")
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+			cmd = fmt.Sprintf("git subtree split -q --prefix=\"" + r.SUBPATH + "\" --branch=\"" + LOCAL_BRANCH + "\" \"" + Origin + "/" + head.head + "\" >/dev/null")
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()//
+			 test := ""
+			if(DRY_RUN == true){
+				test ="1"
+			}
+			cmd = fmt.Sprintf("git push -q " + test + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + head.head)
+			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+			println(" Syncing Branch " + head.head + ": Complete")
+			println(output)
+
+		}else {
+			println(" - skipping head: " + head.head + " (does not exist) ")
+		}
+	}
+	println("Syncing heads: Completed")
 }
 
-func (r *Repo)sync(){
-	println("Starting Sync ")
-	r.syncHeads();
-	r.syncTags();
-	println("Sync Completed ")
+func (r *Repo)sync(Origin string, Branch string, Annotate string, Dry_Run bool) {
+	println("Syncing Task: Started")
+	r.syncHeads(Origin, Dry_Run);
+	r.syncTags(Origin, Annotate);
+	println("Syncing Task: Completed")
 }
 
-func (r *Repo)update(){
-	println("Updating subsplit from origin ")
-	//  Todo: convert from sh to go
-//	subsplit_require_work_dir
-//
-//
-//	git fetch -q origin
-//	git fetch -q -t origin
-//	git checkout master
-//	git reset --hard origin/master
-//
-//	if [ -n "$VERBOSE" ];
-//	then
-//		echo "${DEBUG} git fetch -q origin"
-//		echo "${DEBUG} git fetch -q -t origin"
-//		echo "${DEBUG} git checkout master"
-//		echo "${DEBUG} git reset --hard origin/master"
-//	fi
+func (r *Repo)update(Origin string, Branch string) {
+	println("Updating subsplit from Origin: Starting")
+				cmd := fmt.Sprintf("git fetch -q " + Origin)
+				output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				cmd = fmt.Sprintf("git fetch -q -t " + Origin)
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				cmd = fmt.Sprintf("git checkout master")
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				cmd = fmt.Sprintf("git reset --hard " + Origin +"/" + Branch)
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+	println("Updating subsplit from Origin: Completed")
+	println(output)
 }
 
 
@@ -457,3 +414,4 @@ func (r *myRegexp) FindStringSubmatchMap(s string) map[string]string {
 	}
 	return captures
 }
+
