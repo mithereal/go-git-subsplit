@@ -10,6 +10,7 @@ import (
 	"sync"
 	"github.com/codegangsta/cli"
 	"path/filepath"
+	"strconv"
 )
 
 type myRegexp struct {
@@ -124,14 +125,17 @@ func main() {
 			Aliases:     []string{"-i"},
 			Usage:     "Initialize a subsplit from Origin",
 			Action: func(c *cli.Context) {
+				checkRequirments()
+
+
 				fmt.Printf("Initialize Task: Starting")
 
 				cmd := fmt.Sprintf("git clone -q %s ", c.Args().First())
 				_, err := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
-				abs_repo := strings.Split(c.Args().First(), "/")
+				absolute_repo := strings.Split(c.Args().First(), "/")
 
-				dir := strings.Replace(abs_repo[len(abs_repo) - 1], ".git", "", -1)
+				dir := strings.Replace(absolute_repo[len(absolute_repo) - 1], ".git", "", -1)
 
 				f, err := os.Create(dir + "/.subsplit")
 				f.Close()
@@ -176,7 +180,7 @@ func main() {
 			Aliases:     []string{"-p"},
 			Usage:     "This command will create subtree splits of the project's repository branches and tags. It will then push each branch and tag to the repository dedicated to the subtree.",
 			Action: func(c *cli.Context) {
-
+				checkRequirments()
 				dir, _ := filepath.Abs(filepath.Dir(os.Args[0]));
 				dir += "/.subsplit"
 
@@ -205,8 +209,8 @@ func main() {
 						cmd := fmt.Sprintf("git remote add r.REMOTE_NAME r.REMOTE_URL")
 						_, err := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
-						if(err != nil){
-							r.sync("origin", "master","sample annotation", true);
+						if (err != nil) {
+							r.sync("origin", "master", "sample annotation", true);
 						}
 
 
@@ -290,7 +294,7 @@ func getRemoteName(data string) string {
 	return strings.Replace(result, "\n", "", -1)
 }
 
-func (r *Repo)syncTags(DRY_RUN string,ANNOTATE string) {
+func (r *Repo)syncTags(DRY_RUN string, ANNOTATE string) {
 	println("Syncing Tags ")
 
 
@@ -306,24 +310,24 @@ func (r *Repo)syncTags(DRY_RUN string,ANNOTATE string) {
 			regex := regexp.MustCompile(LOCAL_TAG)
 			matches := regex.FindStringSubmatch(string(output))
 
-			if(matches != nil){
+			if (matches != nil) {
 				println("- skipping tag " + LOCAL_TAG + " (already synced)")
-			}else{
+			}else {
 				println("Syncing Tag: " + Tag.tag)
 				println("Deleting Tag: " + LOCAL_TAG)
-				cmd = fmt.Sprintf("git branch -D \"" + LOCAL_TAG +" \" ")
+				cmd = fmt.Sprintf("git branch -D \"" + LOCAL_TAG + " \" ")
 				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 				println("Syncing Tag " + Tag.tag + ": Complete ")
 
-				cmd = fmt.Sprintf("git subtree split -q --annotate=\"" + ANNOTATE + "\" --prefix=\""+ r.SUBPATH +"\" --branch=\"" + LOCAL_TAG +"\" \""+ Tag.tag +"\"")
+				cmd = fmt.Sprintf("git subtree split -q --annotate=\"" + ANNOTATE + "\" --prefix=\"" + r.SUBPATH + "\" --branch=\"" + LOCAL_TAG + "\" \"" + Tag.tag + "\"")
 
-			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
-//			cmd = fmt.Sprintf("git push -q " + DRY_RUN + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + head.head)
-
-//			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+				//			cmd = fmt.Sprintf("git push -q " + DRY_RUN + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + Tag.tag)
+				//
+				//			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 			}
-println(output)
+			println(output)
 		}else {
 			println(" - skipping Tag: " + Tag.tag + " (does not exist) ")
 		}
@@ -352,14 +356,14 @@ func (r *Repo)syncHeads(Origin string, DRY_RUN bool) {
 			cmd = fmt.Sprintf("git branch -D \"" + LOCAL_BRANCH + " - checkout \"")
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
-			cmd = fmt.Sprintf("git checkout -b \"" + LOCAL_BRANCH + "-checkout\" \"" + Origin + "/" + head.head +"\" ")
+			cmd = fmt.Sprintf("git checkout -b \"" + LOCAL_BRANCH + "-checkout\" \"" + Origin + "/" + head.head + "\" ")
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
 			cmd = fmt.Sprintf("git subtree split -q --prefix=\"" + r.SUBPATH + "\" --branch=\"" + LOCAL_BRANCH + "\" \"" + Origin + "/" + head.head + "\" >/dev/null")
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()//
-			 test := ""
-			if(DRY_RUN == true){
-				test ="1"
+			test := ""
+			if (DRY_RUN == true) {
+				test = "1"
 			}
 			cmd = fmt.Sprintf("git push -q " + test + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + head.head)
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
@@ -382,14 +386,14 @@ func (r *Repo)sync(Origin string, Branch string, Annotate string, Dry_Run bool) 
 
 func (r *Repo)update(Origin string, Branch string) {
 	println("Updating subsplit from Origin: Starting")
-				cmd := fmt.Sprintf("git fetch -q " + Origin)
-				output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
-				cmd = fmt.Sprintf("git fetch -q -t " + Origin)
-				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
-				cmd = fmt.Sprintf("git checkout master")
-				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
-				cmd = fmt.Sprintf("git reset --hard " + Origin +"/" + Branch)
-				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+	cmd := fmt.Sprintf("git fetch -q " + Origin)
+	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+	cmd = fmt.Sprintf("git fetch -q -t " + Origin)
+	output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+	cmd = fmt.Sprintf("git checkout master")
+	output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+	cmd = fmt.Sprintf("git reset --hard " + Origin + "/" + Branch)
+	output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 	println("Updating subsplit from Origin: Completed")
 	println(output)
 }
@@ -413,5 +417,20 @@ func (r *myRegexp) FindStringSubmatchMap(s string) map[string]string {
 
 	}
 	return captures
+}
+
+func checkRequirments() {
+	valid := false
+	cmd := fmt.Sprintf("git version")
+	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
+
+	result := strings.Split(output, " ")
+	f, _ := strconv.ParseFloat(result[2], 64)
+	if ( f < "1.7.11" ) {
+		println("Git subplit needs git subtree; upgrade git to >=1.7.11")
+		os.Exit(1)
+	}
+
+	return valid
 }
 
