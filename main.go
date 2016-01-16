@@ -96,14 +96,19 @@ func main() {
 			Usage: "Do everything except actually send the updates",
 		},
 		cli.StringFlag{
-			Name: "annotate, a",
-			Value: "--annotate",
+			Name: "Annotate, a",
+			Value: "go-git-subsplit",
 			Usage: "annotate the repository",
 		},
 		cli.StringFlag{
 			Name: "Origin, o",
-			Value: "--Origin",
+			Value: "origin",
 			Usage: "Origin of the repository",
+		},
+		cli.StringFlag{
+			Name: "Branch, b",
+			Value: "master",
+			Usage: "Branch of the repository",
 		},
 
 		cli.StringFlag{
@@ -209,8 +214,10 @@ func main() {
 						cmd := fmt.Sprintf("git remote add r.REMOTE_NAME r.REMOTE_URL")
 						_, err := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 
+
+
 						if (err != nil) {
-							r.sync("origin", "master", "sample annotation", true);
+							r.sync(c.String("Origin"), c.String("Branch"), c.String("Annotate"), true);
 						}
 
 
@@ -294,7 +301,7 @@ func getRemoteName(data string) string {
 	return strings.Replace(result, "\n", "", -1)
 }
 
-func (r *Repo)syncTags(DRY_RUN bool, ANNOTATE string) {
+func (r *Repo)syncTags(ANNOTATE string, DRY_RUN bool) {
 	println("Syncing Tags ")
 
 
@@ -384,7 +391,7 @@ func (r *Repo)syncHeads(Origin string, DRY_RUN bool) {
 func (r *Repo)sync(Origin string, Branch string, Annotate string, Dry_Run bool) {
 	println("Syncing Task: Started")
 	r.syncHeads(Origin, Dry_Run);
-	r.syncTags(Origin, Annotate);
+	r.syncTags(Annotate, Dry_Run);
 	println("Syncing Task: Completed")
 }
 
@@ -424,19 +431,17 @@ func (r *myRegexp) FindStringSubmatchMap(s string) map[string]string {
 }
 
 func checkRequirments() {
-	valid := false
+
 	cmd := fmt.Sprintf("git version")
 	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
-
-	result := strings.Split(output, " ")
+	out_string := string(output)
+	result := strings.Split(out_string, " ")
 	f, _ := strconv.ParseFloat(result[len(result) - 1], 64)
-	if ( f < "1.7.11" ) {
+	if ( f < 1.7 ) {
 		println("Git subplit needs git subtree; upgrade git to >=1.7.11")
 		os.Exit(1)
-	}else{
-		valid = true
 	}
 
-	return valid
+
 }
 
