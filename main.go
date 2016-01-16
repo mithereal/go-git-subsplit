@@ -96,17 +96,17 @@ func main() {
 			Usage: "Do everything except actually send the updates",
 		},
 		cli.StringFlag{
-			Name: "Annotate, a",
+			Name: "annotate, a",
 			Value: "go-git-subsplit",
 			Usage: "annotate the repository",
 		},
 		cli.StringFlag{
-			Name: "Origin, o",
+			Name: "origin, o",
 			Value: "origin",
 			Usage: "Origin of the repository",
 		},
 		cli.StringFlag{
-			Name: "Branch, b",
+			Name: "branch, b",
 			Value: "master",
 			Usage: "Branch of the repository",
 		},
@@ -217,7 +217,7 @@ func main() {
 
 
 						if (err != nil) {
-							r.sync(c.String("Origin"), c.String("Branch"), c.String("Annotate"), true);
+							r.sync(c.String("origin"), c.String("branch"), c.String("annotate"), true);
 						}
 
 
