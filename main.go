@@ -57,42 +57,36 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name: "work-dir, w",
-			Value: "--work-dir",
+			Value: "./",
 			Usage: "directory that contains the subsplit working directory",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "heads, g",
-			Value: "--heads",
 			Usage: "Only publish for listed heads instead of all heads",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "no-heads, i",
-			Value: "--no-heads",
 			Usage: "Do not publish any heads",
 		},
 		cli.StringFlag{
 			Name: "tags, t",
-			Value: "--tags",
+			Value: "",
 			Usage: "Only publish for listed tags instead of all tags",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "no-tags, j",
-			Value: "--no-tags",
 			Usage: "Do not publish any tag",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "rebuild-tags,r",
-			Value: "--rebuild-tags",
 			Usage: "Rebuild all tags (as opposed to skipping tags that are already synced)",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "update, u",
-			Value: "--update",
 			Usage: "Fetch updates from repository before publishing",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "dry-run, n",
-			Value: "--dry-run",
 			Usage: "Do everything except actually send the updates",
 		},
 		cli.StringFlag{
@@ -111,14 +105,12 @@ func main() {
 			Usage: "Branch of the repository",
 		},
 
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "quiet, q",
-			Value: "--quiet",
 			Usage: "Do not display output",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name: "debug, d",
-			Value: "--debug",
 			Usage: "Show Debugging Output",
 		},
 
@@ -192,6 +184,7 @@ func main() {
 				if _, err := os.Stat(dir); err == nil {
 					println("Publish Task: Starting")
 					input_repos := strings.Split(c.Args().First(), ",")
+
 					tags := ""
 					heads := ""
 
@@ -217,7 +210,7 @@ func main() {
 
 
 						if (err != nil) {
-							r.sync(c.String("origin"), c.String("branch"), c.String("annotate"), true);
+							r.sync(c.String("origin"), c.String("branch"), c.String("annotate"), c.Bool("dry-run"));
 						}
 
 
@@ -233,6 +226,8 @@ func main() {
 			Aliases:     []string{"-u"},
 			Usage:     "Update ",
 			Action: func(c *cli.Context) {
+				checkRequirments()
+
 				println("Updating subsplit from Origin ")
 			},
 		},
@@ -379,6 +374,7 @@ func (r *Repo)syncHeads(Origin string, DRY_RUN bool) {
 			cmd = fmt.Sprintf("git push -q " + test + " --force " + r.REMOTE_NAME + " " + LOCAL_BRANCH + ":" + head.head)
 			output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 			println(" Syncing Branch " + head.head + ": Complete")
+
 			println(output)
 
 		}else {
