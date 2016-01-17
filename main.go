@@ -228,6 +228,35 @@ func main() {
 			Action: func(c *cli.Context) {
 				checkRequirments()
 
+				dir, _ := filepath.Abs(filepath.Dir(os.Args[0]));
+				dir += "/.subsplit"
+
+				if _, err := os.Stat(dir); err == nil {
+					println("Publish Task: Starting")
+					input_repos := strings.Split(c.Args().First(), ",")
+
+					tags := ""
+					heads := ""
+
+					Repos := []Repo{}
+
+					for _, val := range input_repos {
+
+						r := Repo{
+							SUBPATH:getSubPath(val),
+							REMOTE_URL:getRemoteUrl(val),
+							REMOTE_NAME:getRemoteName(val),
+							HEADS:getHeads(heads),
+							TAGS :getTags(tags),
+						}
+						Repos = append(Repos, r)
+					}
+
+					for _, r := range Repos {
+						r.update(c.String("origin"),c.String("branch"))
+					}
+				}
+
 				println("Updating subsplit from Origin ")
 			},
 		},
@@ -438,7 +467,7 @@ func checkRequirments() {
 	if ( f < 1.7 ) {
 
 		println(f)
-		println("git version  > 1.7.11 is Required")
+		println("git version  >= 1.8 is Required")
 		println("you are running " + out_string)
 
 		os.Exit(1)
