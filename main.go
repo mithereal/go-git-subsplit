@@ -125,7 +125,7 @@ func main() {
 				checkRequirments()
 
 
-				fmt.Printf("Initialize Task: Starting")
+				println("Initialize Task: Starting")
 
 				cmd := fmt.Sprintf("git clone -q %s ", c.Args().First())
 				_, err := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
@@ -134,23 +134,23 @@ func main() {
 
 				dir := strings.Replace(absolute_repo[len(absolute_repo) - 1], ".git", "", -1)
 
-				f, err := os.Create(dir + "/.subsplit")
+				f, err := os.Create("./" + dir + "/.subsplit")
 				f.Close()
 
 				if err != nil {
 					fmt.Printf("Initialize Task: Failed : %s", err)
 
 				}else {
-					file, err := os.Open(dir + "/.gitignore")
+					file, err := os.Open("./" + dir + "/.gitignore")
 
 					if err != nil {
-						fmt.Println(err)
+						println(err)
 
-						f, err := os.Create(dir + "/.gitignore")
+						f, err := os.Create("./" + dir + "/.gitignore")
 
 						if err == nil {
 
-							n, err := io.WriteString(f, dir + "/.subsplit")
+							n, err := io.WriteString(f, "./" + dir + "/.gitignore")
 
 							if err != nil {
 								fmt.Println(n, err)
@@ -160,7 +160,7 @@ func main() {
 						}
 						f.Close()
 					}else {
-						n, err := io.WriteString(file, dir + "/.subsplit")
+						n, err := io.WriteString(file, "./" + dir + "/.gitignore")
 
 						if err != nil {
 							fmt.Println(n, err)
@@ -324,9 +324,9 @@ func (r *Repo)syncTags(ANNOTATE string, DRY_RUN bool) {
 				cmd = fmt.Sprintf("git subtree split -q --annotate=\"" + ANNOTATE + "\" --prefix=\"" + r.SUBPATH + "\" --branch=\"" + LOCAL_TAG + "\" \"" + Tag.tag + "\"")
 
 				test := ""
-			if (DRY_RUN == true) {
-				test = "--dry-run"
-			}
+				if (DRY_RUN == true) {
+					test = "--dry-run"
+				}
 
 				output, _ = exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 				cmd = fmt.Sprintf("git push -q " + test + " --force " + r.REMOTE_NAME + " " + LOCAL_TAG + ":" + Tag.tag)
@@ -432,9 +432,15 @@ func checkRequirments() {
 	output, _ := exec.Command(SHELL, SHELL_ARG_C, cmd).Output()
 	out_string := string(output)
 	result := strings.Split(out_string, " ")
-	f, _ := strconv.ParseFloat(result[len(result) - 1], 64)
+	currentversion := result[len(result) - 1]
+	current := currentversion[0:3]
+	f, _ := strconv.ParseFloat(current,1)
 	if ( f < 1.7 ) {
-		println("Git subplit needs git subtree; upgrade git to >=1.7.11")
+
+		println(f)
+		println("git version  > 1.7.11 is Required")
+		println("you are running " + out_string)
+
 		os.Exit(1)
 	}
 
