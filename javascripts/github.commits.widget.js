@@ -82,7 +82,7 @@
                     li.append(e_user);
 
                     //add commit message
-                    li.append(when(cur.commit.committer.date));
+                   // li.append(when(cur.commit.committer.date));
                     li.append(message(cur.commit.message, cur.sha));
 
 
