@@ -884,6 +884,7 @@ footer a:hover {
 }
 .github-user {
   padding-right: .5em;
+  padding-left: .5em;
   display: block;
 }
 .github-commit {
